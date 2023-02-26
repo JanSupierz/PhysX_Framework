@@ -49,22 +49,22 @@ void TestScene::Update()
 	XMFLOAT3 translation{};
 	const float movementSpeed{ 10.f * m_SceneContext.GetGameTime()->GetElapsed() };
 
-	if (m_SceneContext.GetInput()->IsActionTriggered(Up))
+	if (m_SceneContext.GetInput()->IsActionTriggered(Up) || m_SceneContext.GetInput()->GetThumbstickPosition().y > 0.f)
 	{
 		translation.y += movementSpeed;
 	}
 
-	if (m_SceneContext.GetInput()->IsActionTriggered(Down))
+	if (m_SceneContext.GetInput()->IsActionTriggered(Down) || m_SceneContext.GetInput()->GetThumbstickPosition().y < 0.f)
 	{
 		translation.y -= movementSpeed;
 	}
 
-	if (m_SceneContext.GetInput()->IsActionTriggered(Left))
+	if (m_SceneContext.GetInput()->IsActionTriggered(Left) || m_SceneContext.GetInput()->GetThumbstickPosition().x < 0.f)
 	{
 		translation.x -= movementSpeed;
 	}
 
-	if (m_SceneContext.GetInput()->IsActionTriggered(Right))
+	if (m_SceneContext.GetInput()->IsActionTriggered(Right) || m_SceneContext.GetInput()->GetThumbstickPosition().x > 0.f)
 	{
 		translation.x += movementSpeed;
 	}
