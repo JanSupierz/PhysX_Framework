@@ -9,7 +9,7 @@
 
 enum InputIds : int
 {
-	Play2D, Play3D, IncreaseVolume, DecreaseVolume, Down, Up, Left, Right
+	Play2D, Play3D, IncreaseVolume, DecreaseVolume, Left, Right
 };
 
 void AudioTestScene::Initialize()
@@ -38,8 +38,8 @@ void AudioTestScene::Initialize()
 	const auto pInput = m_SceneContext.GetInput();
 	pInput->AddInputAction({ Play2D, InputTriggerState::pressed, VK_SPACE });
 	pInput->AddInputAction({ Play3D, InputTriggerState::pressed,'B' });
-	pInput->AddInputAction({ Play2D, InputTriggerState::pressed, VK_UP });
-	pInput->AddInputAction({ Play2D, InputTriggerState::pressed, VK_DOWN });
+	pInput->AddInputAction({ IncreaseVolume, InputTriggerState::pressed, VK_UP });
+	pInput->AddInputAction({ DecreaseVolume, InputTriggerState::pressed, VK_DOWN });
 
 	m_SceneContext.GetInput()->AddInputAction(InputAction{ InputIds::Right,InputTriggerState::down, VK_RIGHT,-1,XINPUT_GAMEPAD_DPAD_RIGHT});
 	m_SceneContext.GetInput()->AddInputAction(InputAction{ InputIds::Left,InputTriggerState::down,VK_LEFT,-1,XINPUT_GAMEPAD_DPAD_LEFT });
@@ -67,7 +67,7 @@ void AudioTestScene::Initialize()
 	result = pFmod->playSound(pSound3D, nullptr, true, &m_pChannel3D);
 	SoundManager::GetInstance()->ErrorCheck(result);
 
-	m_pChannel3D->set3DMinMaxDistance(0.f, 20.f);
+	m_pChannel3D->set3DMinMaxDistance(0.f, 200.f);
 }
 
 inline FMOD_VECTOR ToFmod(XMFLOAT3 v) //DirectX
@@ -113,24 +113,26 @@ void AudioTestScene::Update()
 	{
 		float volume{};
 		m_pChannel2D->getVolume(&volume);
-
+	
 		volume += 0.1f;
 		Clamp(volume, 1.f, 0.f);
-
+	
 		m_pChannel2D->setVolume(volume);
+		m_pChannel3D->setVolume(volume);
 
 		Logger::GetInstance()->LogFormat(LogLevel::Info, L"Volume changed >> %f", volume);
 	}
-
+	
 	if (m_SceneContext.GetInput()->IsActionTriggered(DecreaseVolume))
 	{
 		float volume{};
 		m_pChannel2D->getVolume(&volume);
-
+	
 		volume -= 0.1f;
 		Clamp(volume, 1.f, 0.f);
-
+	
 		m_pChannel2D->setVolume(volume);
+		m_pChannel3D->setVolume(volume);
 
 		Logger::GetInstance()->LogFormat(LogLevel::Info, L"Volume changed >> %f", volume);
 	}

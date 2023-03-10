@@ -14,8 +14,6 @@ protected:
 	void Initialize() override;
 	void Update() override;
 	void Draw() const override;
-	void OnSceneActivated() override;
-	void OnSceneDeactivated() override;
 
 private:
 	GameObject* m_pChairConvex;

@@ -14,19 +14,17 @@ protected:
 	void Initialize() override;
 	void Update() override;
 	void Draw() const override;
-	void OnSceneActivated() override;
-	void OnSceneDeactivated() override;
 
 private:
 	void ResetPositions() const;
 
 	GameObject* m_pSphere{ nullptr };
-	PxRigidDynamic* m_pSphereActor{ nullptr };
 
-	const float m_StartHeight{ 8.f };
+
+	const float m_StartHeight{ 0.1f };
 	const float m_BoxSize{ 1.f };
-	const float m_BoxOffset{ 0.3f };
-	const int m_NrRows{ 5 }, m_NrColumns{ 5 };
+	const float m_BoxOffset{ 0.2f };
+	const int m_NrRows{ 8 }, m_NrColumns{ 10 };
 
 	std::vector<GameObject*> m_pCubes{};
 };

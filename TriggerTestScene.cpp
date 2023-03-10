@@ -101,7 +101,7 @@ void TriggerTestScene::OnSceneDeactivated()
 void TriggerTestScene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 {
 
-		for (auto i{ 0 }; i < count; ++i)
+		for (PxU32 i{ 0 }; i < count; ++i)
 		{
 			//ignore deleted shapes
 			if (pairs[i].flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))

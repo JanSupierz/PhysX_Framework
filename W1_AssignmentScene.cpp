@@ -10,7 +10,7 @@ enum InputIds : int
 
 void W1_AssignmentScene::Initialize()
 {
-	srand(std::time(nullptr));
+	srand(static_cast<unsigned int>(time(nullptr)));
 
 	//Physics
 	EnablePhysxDebugRendering(true);
@@ -31,11 +31,12 @@ void W1_AssignmentScene::Initialize()
 	m_pSphere = new SpherePosColorNorm(sphereRadius, sphereDivisions, sphereDivisions, color);
 	AddGameObject(m_pSphere);
 
-	m_pSphereActor = pPhysX->createRigidDynamic(PxTransform{ PxIdentity });
-	m_pSphereActor->setMass(10.f);
-	PxRigidActorExt::createExclusiveShape(*m_pSphereActor, sphereGeometry, *pSphereMaterial);
+	auto pSphereActor = pPhysX->createRigidDynamic(PxTransform{ PxIdentity });
+	pSphereActor->setMass(30.f);
 
-	m_pSphere->AttachRigidActor(m_pSphereActor);
+	PxRigidActorExt::createExclusiveShape(*pSphereActor, sphereGeometry, *pSphereMaterial);
+
+	m_pSphere->AttachRigidActor(pSphereActor);
 
 	//Cubes
 	for (int index{}; index < m_NrRows * m_NrColumns; ++index)
@@ -66,50 +67,44 @@ void W1_AssignmentScene::Initialize()
 	m_SceneContext.GetInput()->AddInputAction(InputAction{ InputIds::Left,InputTriggerState::down,VK_LEFT });
 }
 
+inline PxVec3 ToPxVec3(XMFLOAT3 v)
+{
+	return(PxVec3(v.x, v.y, v.z));
+}
+
 void W1_AssignmentScene::Update()
 {
+	//Reset
 	if (m_SceneContext.GetInput()->IsKeyboardKey(InputTriggerState::pressed, 'R'))
 	{
 		ResetPositions();
 	}
 
-	constexpr float forceValue{ 10000.f };
-	const float torque{ forceValue * m_SceneContext.GetGameTime()->GetElapsed() };
+	//Move ball
+	constexpr float forceValue{ 80.f };
 
 	if (m_SceneContext.GetInput()->IsActionTriggered(InputIds::Left))
 	{
-		auto direction{ m_SceneContext.GetCamera()->GetRight() };
-		const auto vector{ -torque * XMLoadFloat3(&direction) };
-		XMStoreFloat3(&direction, vector);
-
-		m_pSphereActor->addTorque({ direction.z,direction.y,-direction.x });
+		const auto torque{ ToPxVec3(m_SceneContext.GetCamera()->GetForward()).getNormalized() * forceValue };
+		static_cast<PxRigidBody*>(m_pSphere->GetRigidActor())->addTorque(torque, PxForceMode::eACCELERATION);
 	}
 
 	if (m_SceneContext.GetInput()->IsActionTriggered(InputIds::Right))
 	{
-		auto direction{ m_SceneContext.GetCamera()->GetRight() };
-		const auto vector{ torque * XMLoadFloat3(&direction) };
-		XMStoreFloat3(&direction, vector);
-
-		m_pSphereActor->addTorque({ direction.z,direction.y,-direction.x });
+		const auto torque{ ToPxVec3(m_SceneContext.GetCamera()->GetForward()).getNormalized() * -forceValue };
+		static_cast<PxRigidBody*>(m_pSphere->GetRigidActor())->addTorque(torque, PxForceMode::eACCELERATION);
 	}
-
+	
 	if (m_SceneContext.GetInput()->IsActionTriggered(InputIds::Up))
 	{
-		auto direction{ m_SceneContext.GetCamera()->GetForward() };
-		const auto vector{ torque * XMLoadFloat3(&direction) };
-		XMStoreFloat3(&direction, vector);
-
-		m_pSphereActor->addTorque({ direction.z,direction.y,-direction.x });
+		const auto torque{ ToPxVec3(m_SceneContext.GetCamera()->GetRight()).getNormalized() * forceValue };
+		static_cast<PxRigidBody*>(m_pSphere->GetRigidActor())->addTorque(torque, PxForceMode::eACCELERATION);
 	}
 
 	if (m_SceneContext.GetInput()->IsActionTriggered(InputIds::Down))
 	{
-		auto direction{ m_SceneContext.GetCamera()->GetForward() };
-		const auto vector{ -torque * XMLoadFloat3(&direction) };
-		XMStoreFloat3(&direction, vector);
-
-		m_pSphereActor->addTorque({ direction.z,direction.y,-direction.x });
+		const auto torque{ ToPxVec3(m_SceneContext.GetCamera()->GetRight()).getNormalized() * -forceValue };
+		static_cast<PxRigidBody*>(m_pSphere->GetRigidActor())->addTorque(torque, PxForceMode::eACCELERATION);
 	}
 }
 
@@ -117,19 +112,13 @@ void W1_AssignmentScene::Draw() const
 {
 }
 
-void W1_AssignmentScene::OnSceneActivated()
-{
-}
-
-void W1_AssignmentScene::OnSceneDeactivated()
-{
-}
-
 void W1_AssignmentScene::ResetPositions() const
 {
+	//Reset sphere
 	m_pSphere->Translate(0.f, m_StartHeight, 0.f);
 	m_pSphere->RotateDegrees(0.f, 0.f, 0.f);
 
+	//Reset wall
 	for (int indexY{}; indexY < m_NrRows; ++indexY)
 	{
 		for (int indexX{}; indexX < m_NrColumns; ++indexX)

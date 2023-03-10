@@ -25,7 +25,7 @@ void TestScene::Initialize()
 	m_SceneContext.GetCamera()->SetForward(XMFLOAT3{ 0.f,-0.3f,1.f });
 
 	//Torus
-	const auto pTorus{ new TorusPosColorNorm(8.f, 50.f, 1.f, 10.f, XMFLOAT4{Colors::Coral}) };
+	const auto pTorus{ new TorusPosColorNorm(8.f, 50, 1.f, 10, XMFLOAT4{Colors::Coral}) };
 	AddGameObject(pTorus);
 
 	const auto pCylinder{ new CylinderPosColorNorm(1.5f, 10, 4.f) };

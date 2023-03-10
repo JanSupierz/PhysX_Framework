@@ -78,12 +78,3 @@ void PhysiXMeshTestScene::Draw() const
 {
 
 }
-
-void PhysiXMeshTestScene::OnSceneActivated()
-{
-
-}
-
-void PhysiXMeshTestScene::OnSceneDeactivated()
-{
-}
