@@ -35,12 +35,11 @@ private:
 	FMOD::Channel* m_pChannel2D{ nullptr };
 	FMOD::Sound* m_pSound{ nullptr };
 
+	PxRevoluteJoint* m_pBlueJoint{ nullptr };
+	PxRevoluteJoint* m_pRedJoint{ nullptr };
+
+	bool m_ShouldOpenRed{ false };
+	bool m_ShouldOpenBlue{ false };
 	bool m_IsTriggeredRed{};
 	bool m_IsTriggeredBlue{};
-
-	float m_HatchRedAngle{};
-	float m_HatchBlueAngle{};
-
-	GameObject* m_pHatchRed{ nullptr };
-	GameObject* m_pHatchBlue{ nullptr };
 };

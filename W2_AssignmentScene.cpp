@@ -157,11 +157,10 @@ void W2_AssignmentScene::Initialize()
 	pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
 
 	AddGameObject(pTriggerBox);
-	pTriggerBox->Translate(-7.5f, 3.f, 0.f);
+	pTriggerBox->Translate(6.5f, 3.f, 0.f);
 	pTriggerBox->AttachRigidActor(m_pTriggerRed);
 
 	//Trigger blue
-
 	pTriggerBox = new CubePosColorNorm
 	(
 		triggerGeometry.halfExtents.x * 2.f,
@@ -177,36 +176,71 @@ void W2_AssignmentScene::Initialize()
 	pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
 
 	AddGameObject(pTriggerBox);
-	pTriggerBox->Translate(6.5f, 3.f, 0.f);
+	pTriggerBox->Translate(-7.5f, 3.f, 0.f);
 	pTriggerBox->AttachRigidActor(m_pTriggerBlue);
 
-	//Red hatch
-	const auto hatchDimensions = XMFLOAT3{ 2.f,0.2f,5.f };
-	constexpr float hatchPosX{ 9.f }, hatchPosY{ 16.f };
-	const auto hatchGeometry = PxBoxGeometry{ hatchDimensions.x / 2.f,hatchDimensions.y / 2.f,hatchDimensions.z / 2.f };
+	//Hatches
+	constexpr float upperLimit{ 0.f };
+	const float lowerLimit{ -PxPi / 2.f };
 
-	m_pHatchRed = new CubePosColorNorm(hatchDimensions.x, hatchDimensions.y, hatchDimensions.z, XMFLOAT4{ Colors::Red });
-	AddGameObject(m_pHatchRed);
+	const XMFLOAT3 hatchSize{ 2.2f,0.3f,5.f };
+	PxBoxGeometry hatchGeo{ PxBoxGeometry{ hatchSize.x / 2.f, hatchSize.y / 2.f, hatchSize.z / 2.f } };
 
-	auto pHatch = pPhysX->createRigidDynamic(PxTransform{ PxIdentity });
-	PxRigidActorExt::createExclusiveShape(*pHatch, hatchGeometry, *pDefaultMaterial);
-	pHatch->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-	pHatch->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+	//Blue Hatch
+	GameObject* pHatch{ new CubePosColorNorm(hatchSize.x, hatchSize.y, hatchSize.z, XMFLOAT4{ Colors::Blue }) };
+	AddGameObject(pHatch);
 
-	m_pHatchRed->AttachRigidActor(pHatch);
-	m_pHatchRed->Translate(-hatchPosX, hatchPosY, 0.f);
+	auto pHatchActor{ pPhysX->createRigidDynamic(PxTransform{ PxIdentity }) };
+	PxRigidActorExt::createExclusiveShape(*pHatchActor, hatchGeo, *pDefaultMaterial);
+	pHatch->AttachRigidActor(pHatchActor);
+	pHatch->Translate(-9.f, 17.f, 0.f);
 
-	//Blue hatch
-	m_pHatchBlue = new CubePosColorNorm(hatchDimensions.x, hatchDimensions.y, hatchDimensions.z, XMFLOAT4{ Colors::Blue });
-	AddGameObject(m_pHatchBlue);
+	//Blue anchor
+	auto pAnchor = pPhysX->createRigidDynamic(PxTransform{ -9.f,17.f,0.f });
+	pAnchor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+	m_pPhysxScene->addActor(*pAnchor);
 
-	pHatch = pPhysX->createRigidDynamic(PxTransform{ PxIdentity });
-	PxRigidActorExt::createExclusiveShape(*pHatch, hatchGeometry, *pDefaultMaterial);
-	pHatch->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-	pHatch->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+	//Blue joint
+	m_pBlueJoint = PxRevoluteJointCreate(*pPhysX, pAnchor, PxTransform{ 0.f,0.f,0.f }, pHatchActor, PxTransform{ 0.f,0.f,0.f });
+	m_pBlueJoint->setLimit(PxJointAngularLimitPair(lowerLimit, upperLimit, 0.01f));
 
-	m_pHatchBlue->AttachRigidActor(pHatch);
-	m_pHatchBlue->Translate(hatchPosX, hatchPosY, 0.f);
+	m_pBlueJoint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+	m_pBlueJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
+	m_pBlueJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, true);
+
+	//Local pose
+	PxTransform anchorLocalPose{ PxVec3{-1.f,0.f,0.f}, PxQuat(PxHalfPi, PxVec3(0, -1, 0)) };
+	PxTransform hatchLocalPose{ PxVec3{-1.f,0.f,0.f}, PxQuat(PxHalfPi, PxVec3(0, -1, 0)) };
+	m_pBlueJoint->setLocalPose(PxJointActorIndex::eACTOR0, anchorLocalPose);
+	m_pBlueJoint->setLocalPose(PxJointActorIndex::eACTOR1, hatchLocalPose);
+
+	//Red Hatch
+	pHatch = new CubePosColorNorm(hatchSize.x, hatchSize.y, hatchSize.z, XMFLOAT4{ Colors::Red });
+	AddGameObject(pHatch);
+
+	pHatchActor = pPhysX->createRigidDynamic(PxTransform{ PxIdentity });
+	PxRigidActorExt::createExclusiveShape(*pHatchActor, hatchGeo, *pDefaultMaterial);
+	pHatch->AttachRigidActor(pHatchActor);
+	pHatch->Translate(9.f, 17.f, 0.f);
+
+	//Red anchor
+	pAnchor = pPhysX->createRigidDynamic(PxTransform{ 9.f,17.f,0.f });
+	pAnchor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+	m_pPhysxScene->addActor(*pAnchor);
+
+	//Red joint
+	m_pRedJoint = PxRevoluteJointCreate(*pPhysX, pAnchor, PxTransform{ 0.f,0.f,0.f }, pHatchActor, PxTransform{ 0.f,0.f,0.f });
+	m_pRedJoint->setLimit(PxJointAngularLimitPair(lowerLimit, upperLimit, 0.01f));
+
+	m_pRedJoint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+	m_pRedJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
+	m_pRedJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, true);
+
+	//Local pose
+	anchorLocalPose = PxTransform{ PxVec3{1.f,0.f,0.f}, PxQuat(PxHalfPi, PxVec3(0, 1, 0)) };
+	hatchLocalPose = PxTransform{ PxVec3{1.f,0.f,0.f}, PxQuat(PxHalfPi, PxVec3(0, 1, 0)) };
+	m_pRedJoint->setLocalPose(PxJointActorIndex::eACTOR0, anchorLocalPose);
+	m_pRedJoint->setLocalPose(PxJointActorIndex::eACTOR1, hatchLocalPose);
 
 	//Set start positions
 	Reset();
@@ -254,19 +288,18 @@ void W2_AssignmentScene::Update()
 	}
 
 	//Move hatches
-	constexpr float speed{ 60.f };
-	constexpr float maxAngle{ 90.f };
+	constexpr float speed{ -2.f };
 
-	if (m_IsTriggeredRed && m_HatchRedAngle > -maxAngle)
+	if (m_ShouldOpenBlue)
 	{
-		m_HatchRedAngle -= m_SceneContext.GetGameTime()->GetElapsed() * speed;
-		m_pHatchRed->RotateDegrees(0.f, 0.f, m_HatchRedAngle);
+		m_pBlueJoint->setDriveVelocity(speed);
+		m_ShouldOpenBlue = false;
 	}
 
-	if (m_IsTriggeredBlue && m_HatchBlueAngle < maxAngle)
+	if (m_ShouldOpenRed)
 	{
-		m_HatchBlueAngle += m_SceneContext.GetGameTime()->GetElapsed() * speed;
-		m_pHatchBlue->RotateDegrees(0.f, 0.f, m_HatchBlueAngle);
+		m_pRedJoint->setDriveVelocity(speed);
+		m_ShouldOpenRed = false;
 	}
 }
 
@@ -278,7 +311,7 @@ void W2_AssignmentScene::Reset()
 	m_pSphere->Translate(0.f, sphereY, 0.f);
 	m_pSphere->RotateDegrees(0.f, 0.f, 0.f);
 
-	constexpr float smallSphereX{ 9.f }, smallSphereY{ 18.f };
+	constexpr float smallSphereX{ 9.f }, smallSphereY{ 20.f };
 
 	m_pSphereSmall0->Translate(smallSphereX, smallSphereY, 0.f);
 	m_pSphereSmall0->RotateDegrees(0.f, 0.f, 0.f);
@@ -288,22 +321,21 @@ void W2_AssignmentScene::Reset()
 
 	//Reset Boxes
 	constexpr float boxX{ 2.f }, boxY{ 7.f };
-	m_pRedCube->Translate(-boxX, boxY, 0.f);
+	m_pRedCube->Translate(boxX, boxY, 0.f);
 	m_pRedCube->RotateDegrees(0.f, 0.f, 0.f);
 
-	m_pBlueCube->Translate(boxX, boxY, 0.f);
+	m_pBlueCube->Translate(-boxX, boxY, 0.f);
 	m_pBlueCube->RotateDegrees(0.f, 0.f, 0.f);
 
 	//Triggers
 	m_IsTriggeredBlue = false;
 	m_IsTriggeredRed = false;
+	m_ShouldOpenBlue = false;
+	m_ShouldOpenRed = false;
 
-	//Hatches
-	m_HatchBlueAngle = 0.f;
-	m_HatchRedAngle = 0.f;
-
-	m_pHatchRed->RotateDegrees(0.f, 0.f, m_HatchRedAngle);
-	m_pHatchBlue->RotateDegrees(0.f, 0.f, m_HatchBlueAngle);
+	//Joints
+	m_pBlueJoint->setDriveVelocity(8);
+	m_pRedJoint->setDriveVelocity(8);
 }
 
 void W2_AssignmentScene::onTrigger(PxTriggerPair* pairs, PxU32 count)
@@ -320,6 +352,7 @@ void W2_AssignmentScene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 		{
 			if (pair.status == PxPairFlag::eNOTIFY_TOUCH_FOUND)
 			{
+				m_ShouldOpenRed = true;
 				m_IsTriggeredRed = true;
 				SoundManager::GetInstance()->GetSystem()->playSound(m_pSound, nullptr, false, &m_pChannel2D);
 			}
@@ -329,6 +362,7 @@ void W2_AssignmentScene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 		{
 			if (pair.status == PxPairFlag::eNOTIFY_TOUCH_FOUND)
 			{
+				m_ShouldOpenBlue = true;
 				m_IsTriggeredBlue = true;
 				SoundManager::GetInstance()->GetSystem()->playSound(m_pSound, nullptr, false, &m_pChannel2D);
 			}
